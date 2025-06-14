@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rohit Negi AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --background-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #bb86fc;
+            --primary-variant-color: #3700b3;
+            --secondary-color: #03dac6;
+            --text-color: #e0e0e0;
+            --text-secondary-color: #a0a0a0;
+            --user-message-bg: #373737;
+            --ai-message-bg: #2a2a2a;
+            --border-color: #333333;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'Poppins', sans-serif; background-color: var(--background-color);
+            color: var(--text-color); display: flex; justify-content: center; align-items: center;
+        }
+        .chatbot-container {
+            display: flex; width: 100%; height: 100%; max-width: 1400px; max-height: 95vh;
+            background-color: var(--surface-color); border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow-color); overflow: hidden;
+        }
+        .chat-interface { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-header { display: flex; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); z-index: 2; background-color: var(--surface-color); }
+        .avatar-container lottie-player { width: 50px; height: 50px; }
+        .header-info { margin-left: 1rem; }
+        .header-info h1 { font-size: 1.2rem; color: var(--text-color); }
+        .header-info p { font-size: 0.8rem; color: var(--secondary-color); }
+        .settings-button {
+            margin-left: auto; background: none; border: none; color: var(--text-secondary-color);
+            font-size: 1.5rem; cursor: pointer; transition: color 0.2s;
+        }
+        .settings-button:hover { color: var(--primary-color); }
+        .chat-messages { flex-grow: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+        .message { display: flex; max-width: 85%; align-items: center; gap: 10px; animation: fadeIn 0.5s ease-in-out; }
+        .message.no-animation { animation: none; }
+        .message-bubble { padding: 0.8rem 1.2rem; border-radius: 18px; line-height: 1.6; word-wrap: break-word; }
+        .message.user { align-self: flex-end; }
+        .message.user .message-bubble { background-color: var(--primary-color); color: #121212; border-bottom-right-radius: 4px; }
+        .message.ai { align-self: flex-start; }
+        .message.ai .message-bubble { background-color: var(--user-message-bg); border-bottom-left-radius: 4px; }
+        .message.ai .message-bubble code { background-color: rgba(0,0,0,0.3); padding: 0.2em 0.4em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; }
+        .message.ai .message-bubble pre { background-color: #111; padding: 1rem; border-radius: 8px; margin: 1rem 0; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+        .message.ai .message-bubble a { color: var(--secondary-color); text-decoration: none; }
+        .message.ai .message-bubble a:hover { text-decoration: underline; }
+        .play-voice-btn { background: none; border: none; color: var(--text-secondary-color); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; padding: 5px; }
+        .play-voice-btn:hover { color: var(--secondary-color); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .typing-indicator { display: none; align-self: flex-start; align-items: center; gap: 5px; padding: 0.8rem 1.2rem; }
+        .typing-indicator span { width: 8px; height: 8px; background-color: var(--text-secondary-color); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; } .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        .chat-input-container { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); background-color: var(--surface-color); }
+        .prompt-buttons { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .prompt-btn { background-color: var(--user-message-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: 15px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; font-size: 0.85rem; }
+        .prompt-btn:hover { background-color: #444; border-color: var(--primary-color); }
+        #chat-form { display: flex; gap: 1rem; align-items: center; }
+        #prompt-input { flex-grow: 1; background-color: var(--user-message-bg); border: 1px solid var(--border-color); border-radius: 20px; padding: 0.75rem 1.25rem; color: var(--text-color); font-size: 1rem; outline: none; transition: border-color 0.2s; }
+        #prompt-input:focus { border-color: var(--primary-color); }
+        #send-button { background-color: var(--primary-color); border: none; color: #121212; width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, transform 0.1s; }
+        #send-button:hover { background-color: var(--secondary-color); }
+        #send-button:disabled { background-color: #555; cursor: not-allowed; }
+        .settings-panel { position: absolute; top: 75px; right: 20px; background-color: #2c2c2c; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; z-index: 100; box-shadow: 0 5px 15px var(--shadow-color); width: 350px; display: none; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .settings-panel h3 { color: var(--primary-color); margin-bottom: 1rem;}
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary-color); font-size: 0.9rem; }
+        .form-group select { width: 100%; padding: 0.6rem; background-color: var(--user-message-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 6px; }
+        @media (max-width: 900px) { .history-panel { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <main class="chat-interface">
+            <header class="chat-header">
+                <div class="avatar-container"><lottie-player src="https://assets10.lottiefiles.com/packages/lf20_v9riyrep.json" background="transparent" speed="1" loop autoplay></lottie-player></div>
+                <div class="header-info"><h1>Rohit Negi AI</h1><p id="status-text">Online</p></div>
+                <button class="settings-button" id="settings-toggle-btn" title="Settings">⚙️</button>
+            </header>
+
+            <div class="chat-messages" id="chat-messages">
+                <!-- Chat history will be loaded here by JavaScript -->
+            </div>
+
+            <div class="message ai typing-indicator" id="typing-indicator"><span></span><span></span><span></span></div>
+            
+            <div class="chat-input-container">
+                <div class="prompt-buttons" id="prompt-buttons">
+                    <button class="prompt-btn">Tell me about your GATE journey</button>
+                    <button class="prompt-btn">What's your fitness routine?</button>
+                    <button class="prompt-btn">How did you get a job at Uber?</button>
+                </div>
+                <form id="chat-form">
+                    <input type="text" id="prompt-input" placeholder="e.g., How did you prepare for GATE?" autocomplete="off">
+                    <button type="submit" id="send-button" title="Send Message"><span>➤</span></button>
+                </form>
+            </div>
+            
+            <!-- Settings Panel -->
+            <div class="settings-panel" id="settings-panel">
+                 <h3>Settings</h3>
+                <div class="form-group">
+                    <label for="ai-provider">AI Provider</label>
+                    <select id="ai-provider">
+                        <option value="openai">OpenAI (gpt-4o-mini)</option>
+                        <option value="google">Google (gemini-1.5-flash)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button id="clear-chat-btn" style="width:100%; padding: 0.6rem; background-color: var(--primary-variant-color); color: white; border: none; border-radius: 6px; cursor: pointer;">Clear Chat & History</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script>
+        // --- DOM ELEMENTS ---
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const promptInput = document.getElementById('prompt-input');
+        const sendButton = document.getElementById('send-button');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const settingsToggleBtn = document.getElementById('settings-toggle-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const aiProviderSelect = document.getElementById('ai-provider');
+        const clearChatBtn = document.getElementById('clear-chat-btn');
+        const promptButtonsContainer = document.getElementById('prompt-buttons');
+
+        // --- STATE & CONSTANTS ---
+        let chatHistory = []; // Master history: [{ role: 'user'/'assistant', content: '...' }]
+        const HISTORY_KEY = 'rohitNegiAiChatHistory';
+        const AI_PROVIDER_KEY = 'ai-provider';
+
+        // --- CORE AI LOGIC (REWRITTEN) ---
+        async function getAIResponse() {
+            typingIndicator.style.display = 'flex';
+            sendButton.disabled = true;
+
+            try {
+                // This is the only part that needs the raw user/assistant history
+                const historyForAPI = chatHistory.filter(msg => msg.role === 'user' || msg.role === 'assistant');
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        history: historyForAPI,
+                        provider: aiProviderSelect.value
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Failed to get response from the server.');
+                }
+                
+                const data = await response.json();
+                const responseText = data.reply;
+                
+                addMessageToUI('ai', responseText);
+                chatHistory.push({ role: 'assistant', content: responseText });
+                saveHistory();
+
+            } catch (error) {
+                console.error("AI Error:", error);
+                addMessageToUI('ai', `Sorry, an error occurred: ${error.message}.`);
+            } finally {
+                typingIndicator.style.display = 'none';
+                sendButton.disabled = false;
+                promptInput.focus();
+            }
+        }
+
+        // --- UI & HISTORY MANAGEMENT ---
+        function addMessageToUI(sender, text, isInitialLoad = false) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+            if (isInitialLoad) {
+                messageElement.classList.add('no-animation');
+            }
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+
+            // Process text for markdown, links, and code blocks
+            let processedText = text
+                .replace(/```(\w+)?\n([\s\S]+?)```/g, (match, lang, code) => `<pre><code>${code.replace(/</g, '<').replace(/>/g, '>')}</code></pre>`)
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>')
+                .replace(/\n/g, '<br>');
+
+            bubble.innerHTML = processedText;
+            messageElement.appendChild(bubble);
+
+            if (sender === 'ai') {
+                const playButton = document.createElement('button');
+                playButton.classList.add('play-voice-btn');
+                playButton.innerHTML = '🔊';
+                playButton.title = "Read message aloud";
+                playButton.setAttribute('data-text-to-speak', text); // Store original text for speech
+                messageElement.appendChild(playButton);
+            }
+
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function saveHistory() {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(chatHistory));
+        }
+
+        function loadHistory() {
+            try {
+                const savedHistory = localStorage.getItem(HISTORY_KEY);
+                if (savedHistory) {
+                    chatHistory = JSON.parse(savedHistory);
+                    chatMessages.innerHTML = '';
+                    chatHistory.forEach(msg => {
+                        const sender = msg.role === 'assistant' ? 'ai' : 'user';
+                        addMessageToUI(sender, msg.content, true);
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to load or parse chat history:", e);
+                chatHistory = []; // Reset on error
+                localStorage.removeItem(HISTORY_KEY);
+            }
+
+            if (chatMessages.innerHTML.trim() === '') {
+                const welcomeText = "Hey there! I'm the Rohit Negi AI. Ask me anything about my journey, GATE, DSA, or fitness. Let's get started!";
+                addMessageToUI('ai', welcomeText, true);
+                // Don't save this initial message to history, let the server handle the persona.
+                // A clean history is better. Let's start it fresh.
+                chatHistory = [];
+                saveHistory();
+            }
+        }
+
+        function clearChat() {
+            if (confirm('Are you sure you want to clear the chat? This will erase the conversation history permanently.')) {
+                chatHistory = [];
+                localStorage.removeItem(HISTORY_KEY);
+                chatMessages.innerHTML = '';
+                addMessageToUI('ai', "Chat cleared. Let's start a new conversation!");
+            }
+        }
+
+        async function handlePromptButtonClick(e) {
+            if (e.target.classList.contains('prompt-btn')) {
+                const userPrompt = e.target.textContent;
+                promptInput.value = ''; 
+                
+                addMessageToUI('user', userPrompt);
+                chatHistory.push({ role: 'user', content: userPrompt });
+                // We don't save history here yet, we save after the AI responds
+                
+                await getAIResponse();
+            }
+        }
+
+        function speakText(text) {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                return;
+            }
+            const cleanText = text.replace(/```[\s\S]+?```|`|\*\*|#|https?:\/\/[^\s]+/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            speechSynthesis.speak(utterance);
+        }
+
+        // --- EVENT LISTENERS ---
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userPrompt = promptInput.value.trim();
+            if (!userPrompt || sendButton.disabled) return;
+            
+            addMessageToUI('user', userPrompt);
+            chatHistory.push({ role: 'user', content: userPrompt });
+            
+            promptInput.value = '';
+            getAIResponse();
+        });
+
+        chatMessages.addEventListener('click', (e) => {
+            const playButton = e.target.closest('.play-voice-btn');
+            if (playButton) {
+                speakText(playButton.getAttribute('data-text-to-speak'));
+            }
+        });
+
+        promptButtonsContainer.addEventListener('click', handlePromptButtonClick);
+        settingsToggleBtn.addEventListener('click', () => { settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block'; });
+        clearChatBtn.addEventListener('click', clearChat);
+        document.addEventListener('click', (e) => { if (!settingsPanel.contains(e.target) && e.target !== settingsToggleBtn) { settingsPanel.style.display = 'none'; } });
+
+        aiProviderSelect.addEventListener('change', (e) => localStorage.setItem(AI_PROVIDER_KEY, e.target.value));
+
+        // --- INITIALIZATION ---
+        function initializeApp() {
+            aiProviderSelect.value = localStorage.getItem(AI_PROVIDER_KEY) || 'openai';
+            loadHistory();
+        }
+
+        initializeApp();
+    </script>
+</body>
+</html>

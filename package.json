@@ -1,0 +1,9 @@
+{
+  "name": "rohit-negi-ai-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@google/generative-ai": "^0.11.3",
+    "openai": "^4.47.1"
+  }
+}
